@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudLab — Autentificare</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #1e1e2e;
+      --accent: #6ee7b7;
+      --accent2: #818cf8;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --error: #f87171;
+      --success: #6ee7b7;
+    }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(110,231,183,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(110,231,183,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Glow blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    .blob-1 { width: 400px; height: 400px; background: #6ee7b7; top: -100px; left: -100px; }
+    .blob-2 { width: 300px; height: 300px; background: #818cf8; bottom: -80px; right: -80px; }
+
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 44px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 0 60px rgba(110,231,183,0.06);
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo-text { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--accent); }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 32px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--surface);
+      color: var(--accent);
+      box-shadow: 0 0 0 1px var(--border);
+    }
+
+    .form { display: flex; flex-direction: column; gap: 16px; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(110,231,183,0.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      margin-top: 4px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #0a0a0f;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .msg {
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: none;
+    }
+    .msg.error { background: rgba(248,113,113,0.1); color: var(--error); border: 1px solid rgba(248,113,113,0.2); }
+    .msg.success { background: rgba(110,231,183,0.1); color: var(--success); border: 1px solid rgba(110,231,183,0.2); }
+    .msg.show { display: block; }
+
+    /* Dashboard (logged in) */
+    .dashboard { display: none; }
+    .dashboard.show { display: block; animation: fadeUp 0.4s ease both; }
+
+    .welcome {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .welcome span { color: var(--accent); }
+
+    .info-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 20px 0;
+      line-height: 1.8;
+    }
+    .info-box .key { color: var(--accent2); }
+    .info-box .val { color: var(--text); }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { border-color: var(--error); color: var(--error); }
+
+    .form-section { display: block; }
+    .form-section.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">☁️</div>
+      <div class="logo-text">Cloud<span>Lab</span></div>
+    </div>
+
+    <!-- Auth section -->
+    <div id="authSection" class="form-section">
+      <h1>Bun venit</h1>
+      <p class="subtitle">// laborator aplicatii cloud</p>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+        <button class="tab-btn" onclick="switchTab('register')">Înregistrare</button>
+      </div>
+
+      <div id="msg" class="msg"></div>
+
+      <!-- Login Form -->
+      <div id="loginForm" class="form">
+        <div>
+          <label>Username</label>
+          <input type="text" id="loginUser" placeholder="utilizator" autocomplete="username" />
+        </div>
+        <div>
+          <label>Parolă</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button class="btn" onclick="doLogin()">Autentificare →</button>
+      </div>
+
+      <!-- Register Form -->
+      <div id="registerForm" class="form" style="display:none">
+        <div>
+          <label>Username</label>
+          <input type="text" id="regUser" placeholder="alege un username" autocomplete="username" />
+        </div>
+        <div>
+          <label>Parolă</label>
+          <input type="password" id="regPass" placeholder="minim 6 caractere" autocomplete="new-password" />
+        </div>
+        <button class="btn" onclick="doRegister()">Creează cont →</button>
+      </div>
+    </div>
+
+    <!-- Dashboard section -->
+    <div id="dashboard" class="dashboard">
+      <p class="welcome">Salut, <span id="dashUser"></span> 👋</p>
+      <p class="subtitle">// autentificat cu succes</p>
+      <div class="info-box">
+        <div><span class="key">service</span>  <span class="val">cloud-lab-frontend</span></div>
+        <div><span class="key">backend</span>  <span class="val" id="backendUrl">—</span></div>
+        <div><span class="key">token</span>    <span class="val" id="tokenPreview">—</span></div>
+        <div><span class="key">status</span>   <span class="val" style="color: var(--accent)">● authenticated</span></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Deconectare</button>
+    </div>
+  </div>
+
+  <script>
+    // ─── CONFIG ───────────────────────────────────────────────
+    // In Kubernetes, BACKEND_URL is injected via env → window._env_
+    const BACKEND = (window._env_ && window._env_.BACKEND_URL)
+      || 'http://localhost:3001';
+
+    // ─── TABS ────────────────────────────────────────────────
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach((b, i) =>
+        b.classList.toggle('active', (i === 0) === (tab === 'login')));
+      document.getElementById('loginForm').style.display = tab === 'login' ? 'flex' : 'none';
+      document.getElementById('registerForm').style.display = tab === 'register' ? 'flex' : 'none';
+      hideMsg();
+    }
+
+    // ─── MSG ─────────────────────────────────────────────────
+    function showMsg(text, type) {
+      const el = document.getElementById('msg');
+      el.textContent = text;
+      el.className = `msg ${type} show`;
+    }
+    function hideMsg() {
+      document.getElementById('msg').className = 'msg';
+    }
+
+    // ─── AUTH ────────────────────────────────────────────────
+    async function doLogin() {
+      const username = document.getElementById('loginUser').value.trim();
+      const password = document.getElementById('loginPass').value;
+      if (!username || !password) return showMsg('Completează toate câmpurile.', 'error');
+      try {
+        const r = await fetch(`${BACKEND}/api/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await r.json();
+        if (!r.ok) return showMsg(data.error || 'Eroare la autentificare.', 'error');
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('username', data.username);
+        showDashboard(data.username, data.token);
+      } catch {
+        showMsg('Nu pot contacta backend-ul. Verifică conexiunea.', 'error');
+      }
+    }
+
+    async function doRegister() {
+      const username = document.getElementById('regUser').value.trim();
+      const password = document.getElementById('regPass').value;
+      if (!username || !password) return showMsg('Completează toate câmpurile.', 'error');
+      if (password.length < 6) return showMsg('Parola trebuie să aibă minim 6 caractere.', 'error');
+      try {
+        const r = await fetch(`${BACKEND}/api/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await r.json();
+        if (!r.ok) return showMsg(data.error || 'Eroare la înregistrare.', 'error');
+        showMsg('Cont creat! Acum te poți autentifica.', 'success');
+        setTimeout(() => switchTab('login'), 1200);
+      } catch {
+        showMsg('Nu pot contacta backend-ul.', 'error');
+      }
+    }
+
+    function doLogout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      document.getElementById('dashboard').classList.remove('show');
+      document.getElementById('authSection').classList.remove('hidden');
+    }
+
+    function showDashboard(username, token) {
+      document.getElementById('authSection').classList.add('hidden');
+      document.getElementById('dashboard').classList.add('show');
+      document.getElementById('dashUser').textContent = username;
+      document.getElementById('backendUrl').textContent = BACKEND;
+      document.getElementById('tokenPreview').textContent = token.slice(0, 20) + '...';
+    }
+
+    // ─── AUTO LOGIN ──────────────────────────────────────────
+    const savedToken = localStorage.getItem('token');
+    const savedUser  = localStorage.getItem('username');
+    if (savedToken && savedUser) showDashboard(savedUser, savedToken);
+
+    // ─── ENTER KEY ───────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      if (document.getElementById('loginForm').style.display !== 'none') doLogin();
+      else doRegister();
+    });
+  </script>
+</body>
+</html>

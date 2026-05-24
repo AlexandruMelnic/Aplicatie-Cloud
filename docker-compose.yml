@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./backend
+    container_name: cloudlab-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - JWT_SECRET=dev-secret-change-in-prod
+      - DB_PATH=/data/users.db
+    volumes:
+      - db-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    container_name: cloudlab-frontend
+    ports:
+      - "8080:80"
+    environment:
+      - BACKEND_URL=http://localhost:3001
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db-data:

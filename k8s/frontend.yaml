@@ -1,0 +1,64 @@
+---
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: cloudlab
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: REGISTRY/cloudlab-frontend:IMAGE_TAG
+          ports:
+            - containerPort: 80
+          env:
+            - name: BACKEND_URL
+              # In-cluster: use the backend Service DNS name
+              value: "http://backend-service:3001"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+
+---
+# Frontend Service (LoadBalancer — exposed externally)
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: cloudlab
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudlab

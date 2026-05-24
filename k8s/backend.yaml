@@ -1,0 +1,101 @@
+---
+# PersistentVolumeClaim for SQLite database
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-db-pvc
+  namespace: cloudlab
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+
+---
+# Secret for JWT
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secret
+  namespace: cloudlab
+type: Opaque
+stringData:
+  JWT_SECRET: "k8s-production-secret-change-me"
+
+---
+# Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: cloudlab
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: REGISTRY/cloudlab-backend:IMAGE_TAG
+          ports:
+            - containerPort: 3001
+          env:
+            - name: PORT
+              value: "3001"
+            - name: DB_PATH
+              value: /data/users.db
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: JWT_SECRET
+          volumeMounts:
+            - name: db-storage
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: backend-db-pvc
+
+---
+# Backend Service (ClusterIP — only reachable inside cluster)
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: cloudlab
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 3001
+      targetPort: 3001
+  type: ClusterIP
